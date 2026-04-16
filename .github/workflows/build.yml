@@ -19,10 +19,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4 python3-pip python3-pyelftools
       
-      - name: 克隆源码并应用配置
+      - name: 克隆源码
         run: |
           git clone https://github.com/zhoufuli/immortalwrt-rk356x -b main openwrt
+      
+      - name: Load Custom Configuration
+        run: |
+          df -hT
           cp .config openwrt/.config
+          chmod +x openwrt/scripts/*.sh
+      
+      - name: 编译固件
+        run: |
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
