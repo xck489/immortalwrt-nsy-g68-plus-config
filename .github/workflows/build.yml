@@ -6,18 +6,19 @@ on:
   workflow_dispatch:
 
 env:
-  REPO_URL: https://github.com/linyueweia/immortalwrt-nsy-g68-plus
-  REPO_BRANCH: main
+  SOURCE_REPO: https://github.com/linyueweia/immortalwrt-nsy-g68-plus
+  SOURCE_BRANCH: main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source repo
+        uses: actions/checkout@v4
         with:
-          repository: ${{ env.REPO_URL }}
-          ref: ${{ env.REPO_BRANCH }}
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ env.SOURCE_BRANCH }}
           path: immortalwrt
           fetch-depth: 1
 
@@ -31,12 +32,23 @@ jobs:
         run: |
           cd immortalwrt
           cp .feeds.conf feeds.conf.default
-          cp ../.config .config
-          chmod +x scripts/*.sh
+          git archive HEAD:.config | tar -x -C . || cp ~/.config .config 2>/dev/null || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use config from this repo
+        run: |
+          cd immortalwrt
+          # Clone this repo to get .config
+          git clone https://github.com/${{ github.repository }} openwrt-config
+          cp openwrt-config/.config .config || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update and install feeds
         run: |
           cd immortalwrt
+          chmod +x scripts/*.sh
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
