@@ -60,6 +60,10 @@ jobs:
           sed -i "/CONFIG_RUST_SCCACHE/d" .config
           echo "# CONFIG_PACKAGE_rust is not set" >> .config
 
+          # 强制禁用 ruby（避免 rust/host 依赖）
+          sed -i "/CONFIG_PACKAGE_ruby=y/d" .config
+          echo "# CONFIG_PACKAGE_ruby is not set" >> .config
+
           # 强制写入 istore 配置
           echo "=== 修复 istore 配置 ==="
           sed -i "/CONFIG_PACKAGE_luci-app-store=/d" .config
