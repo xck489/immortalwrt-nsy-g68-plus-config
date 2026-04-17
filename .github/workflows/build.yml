@@ -32,7 +32,7 @@ jobs:
           cp -r /tmp/istore/luci/luci-app-store package/feeds/istore/
           cp -r /tmp/istore/luci/luci-lib-taskd package/feeds/istore/
           cp -r /tmp/istore/luci/luci-lib-xterm package/feeds/istore/
-          cp -r /tmp/istore/taskd package/feeds/istore/
+          cp -r /tmp/istore/luci/taskd package/feeds/istore/
           ls -la package/feeds/istore/
 
           # 更新其他 feeds
