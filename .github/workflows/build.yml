@@ -25,19 +25,40 @@ jobs:
         run: |
           git clone $REPO_URL -b $REPO_BRANCH openwrt
           cd openwrt
-          cp ../configs/nsy_g68-plus.config .config
+
+          # 备份原始配置文件
+          cp ../configs/nsy_g68-plus.config .config.backup
+
+          # 复制 feeds 配置
+          cp .feeds.conf.default feeds.conf 2>/dev/null || true
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
+          # 确认 istore feed 是否安装
+          echo "=== 检查 istore feed ==="
+          ls feeds/istore/applications/ 2>/dev/null | grep store || echo "istore feed 目录为空或不存在"
+
+          # 从备份恢复 .config，然后让 defconfig/oldconfig 在此基础上更新
+          cp .config.backup .config
           make defconfig
           make oldconfig MAKEFLAGS=-y
 
+          # 强制写入关键配置（防止 oldconfig 重置）
+          echo "=== 修复 istore 配置 ==="
+          sed -i '/CONFIG_PACKAGE_luci-app-store/d' .config
+          sed -i '/CONFIG_PACKAGE_luci-app-store-btop/d' .config
+          sed -i '/CONFIG_PACKAGE_luci-app-store-dockerman/d' .config
+          sed -i '/CONFIG_PACKAGE_luci-app-store-argon/d' .config
+          sed -i '/CONFIG_PACKAGE_luci-app-store-filebrowser/d' .config
+          echo 'CONFIG_PACKAGE_luci-app-store=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-store-btop=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-store-dockerman=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-store-argon=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-store-filebrowser=y' >> .config
+
           echo "=== 验证设备配置 ==="
           grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确: DEVICE_nsy_g68-plus" || echo "❌ 设备配置缺失!"
-          grep "CONFIG_TARGET_PROFILE=" .config
-          grep "CONFIG_TARGET_BOARD=" .config
-          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 应用商店已配置" || echo "⚠️ istore 未配置，将尝试修复..."
-          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config || sed -i 's/# CONFIG_PACKAGE_luci-app-store is not set/CONFIG_PACKAGE_luci-app-store=y/' .config
-          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 已修复并确认" || echo "⚠️ istore 无法修复"
+          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 应用商店已配置" || echo "⚠️ istore 未配置"
           grep -F "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置" || echo "⚠️ LuCI 未配置"
 
           make download -j8
