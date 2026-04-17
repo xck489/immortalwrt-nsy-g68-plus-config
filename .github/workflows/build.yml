@@ -30,6 +30,12 @@ jobs:
           ./scripts/feeds install -a
           make defconfig
           make oldconfig MAKEFLAGS=-y
+
+          echo "=== 验证设备配置 ==="
+          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确: DEVICE_nsy_g68-plus" || echo "❌ 设备配置缺失!"
+          grep "CONFIG_TARGET_PROFILE=" .config
+          grep "CONFIG_TARGET_BOARD=" .config
+
           make download -j8
           make -j$(nproc) world
 
