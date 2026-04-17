@@ -1,0 +1,100 @@
+name: Build (Repo2)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'configs/**'
+      - '.github/workflows/build-repo2.yml'
+  workflow_dispatch:
+
+env:
+  SOURCE_REPO: https://github.com/linyueweia/immortalwrt-nsy-g68-plus
+  SOURCE_BRANCH: main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout config repo
+        uses: actions/checkout@v4
+        with:
+          path: config
+
+      - name: Install deps
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get update
+          sudo apt-get install -y python3-pyelftools build-essential clang flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4
+
+      - name: Shallow clone source (depth=1, no history)
+        run: |
+          git clone --depth=1 $SOURCE_REPO -b $SOURCE_BRANCH openwrt
+          echo "Clone done, size:"
+          du -sh openwrt/
+
+      - name: Prepare feeds and istore
+        run: |
+          REPO_ROOT=$PWD
+          cd $REPO_ROOT/openwrt
+
+          # 复制 feeds 配置
+          cp $REPO_ROOT/config/feeds.conf.default .
+
+          # 手动安装 istore（feeds.conf 有 istore 源但仓库没有 feeds.conf）
+          git clone https://github.com/linkease/istore.git /tmp/istore
+          mkdir -p package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-app-store package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-lib-taskd package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-lib-xterm package/feeds/istore/
+          cp -r /tmp/istore/luci/taskd package/feeds/istore/
+
+          # 更新 feeds
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+          # 复制配置
+          cp $REPO_ROOT/config/configs/nsy_g68-plus.config .config
+          make defconfig
+          make oldconfig MAKEFLAGS=-y
+
+          # 强制写入 istore 配置
+          sed -i '/CONFIG_PACKAGE_luci-app-store=/d' .config
+          echo 'CONFIG_PACKAGE_luci-app-store=y' >> .config
+
+          echo "=== 验证配置 ==="
+          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确" || echo "❌ 设备配置缺失"
+          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 已配置" || echo "⚠️ istore 未配置"
+          grep -F "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置" || echo "⚠️ LuCI 未配置"
+
+      - name: Download dependencies
+        run: |
+          cd openwrt
+          make download -j8
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) world 2>&1 | tee build.log
+
+      - name: Upload firmware artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-repo2
+          path: |
+            openwrt/bin/targets/rockchip/armv8/**/*.img.gz
+            openwrt/bin/targets/rockchip/armv8/**/md5sums
+            openwrt/build.log
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-repo2
+          path: |
+            openwrt/.config
+            openwrt/build.log
+          retention-days: 7
