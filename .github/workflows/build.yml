@@ -35,13 +35,14 @@ jobs:
             flex automake cmake help2man ocaml sparse ccache rsync \
             time device-tree-compiler clang
 
-      - name: Update feeds (no install - avoids triggering non-existent feed paths)
+      - name: Update and install feeds
         run: |
           cd openwrt
           cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
           TZ=Asia/Shanghai ./scripts/feeds update -a
+          ./scripts/feeds install -a
 
-      - name: Create .config
+      - name: Create .config for NSY-G68-PLUS
         run: |
           cd openwrt
           cp target/linux/rockchip/armv8/config-6.6 .config
@@ -62,10 +63,10 @@ jobs:
           echo 'CONFIG_TARGET_ROOTFS_PARTSIZE=512' >> .config
           echo 'CONFIG_TARGET_IMAGES_DTB=y' >> .config
 
-      - name: Expand config
+      - name: Validate configuration
         run: |
           cd openwrt
-          make defconfig
+          make defconfig IGNORE_MISSING=1
 
       - name: Build firmware
         run: |
