@@ -44,7 +44,7 @@ jobs:
           cd openwrt
 
           # 更新 feeds
-          cp .feeds.conf.default feeds.conf
+          cp .feeds.conf.default feeds.conf 2>/dev/null || cp ../config/feeds.conf.default feeds.conf
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
