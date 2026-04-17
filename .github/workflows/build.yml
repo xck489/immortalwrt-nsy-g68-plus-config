@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  SOURCE_REPO: https://github.com/linyueweia/immortalwrt-nsy-g68-plus
+  SOURCE_REPO: linyueweia/immortalwrt-nsy-g68-plus
   SOURCE_BRANCH: main
 
 jobs:
@@ -21,6 +21,14 @@ jobs:
           ref: ${{ env.SOURCE_BRANCH }}
           path: immortalwrt
           fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout config (this repo)
+        uses: actions/checkout@v4
+        with:
+          path: config-repo
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install deps
         run: |
@@ -28,27 +36,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4 python3-pip python3-pyelftools
 
-      - name: Prepare config
+      - name: Prepare config and feeds
         run: |
           cd immortalwrt
-          cp .feeds.conf feeds.conf.default
-          git archive HEAD:.config | tar -x -C . || cp ~/.config .config 2>/dev/null || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Use config from this repo
-        run: |
-          cd immortalwrt
-          # Clone this repo to get .config
-          git clone https://github.com/${{ github.repository }} openwrt-config
-          cp openwrt-config/.config .config || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          cp config-repo/.feeds.conf feeds.conf.default
+          cp config-repo/.config .config
+          chmod +x scripts/*.sh
 
       - name: Update and install feeds
         run: |
           cd immortalwrt
-          chmod +x scripts/*.sh
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
