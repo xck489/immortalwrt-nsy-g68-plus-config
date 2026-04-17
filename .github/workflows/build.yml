@@ -35,7 +35,7 @@ jobs:
           grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确: DEVICE_nsy_g68-plus" || echo "❌ 设备配置缺失!"
           grep "CONFIG_TARGET_PROFILE=" .config
           grep "CONFIG_TARGET_BOARD=" .config
-          grep "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 应用商店已配置" || echo "⚠️ istore 未配置"
+          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 应用商店已配置" || echo "⚠️ istore 未配置"
           grep "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置" || echo "⚠️ LuCI 未配置"
 
           make download -j8
