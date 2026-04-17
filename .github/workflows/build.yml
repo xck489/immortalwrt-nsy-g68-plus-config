@@ -12,7 +12,7 @@ jobs:
       - name: 克隆源码
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository }}
+          repository: linyueweia/immortalwrt-nsy-g68-plus
           path: openwrt
           sparse-checkout: |
             .feeds.conf
