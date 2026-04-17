@@ -40,7 +40,8 @@ jobs:
           cd openwrt
           cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
           TZ=Asia/Shanghai ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          ./scripts/feeds install -a -f
+          ls -la package/feeds/base/ 2>/dev/null | head -10
 
       - name: Create .config for NSY-G68-PLUS
         run: |
