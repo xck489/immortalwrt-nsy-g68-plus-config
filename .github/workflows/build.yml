@@ -28,7 +28,8 @@ jobs:
           cp ../configs/g68_mtk_wifi.config .config
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          make oldconfig
+          make defconfig
+          make oldconfig MAKEFLAGS=-y
           make download -j8
           make -j$(nproc) world
 
