@@ -62,6 +62,11 @@ jobs:
           echo 'CONFIG_TARGET_ROOTFS_PARTSIZE=512' >> .config
           echo 'CONFIG_TARGET_IMAGES_DTB=y' >> .config
 
+      - name: Expand config
+        run: |
+          cd openwrt
+          make defconfig
+
       - name: Build firmware
         run: |
           cd openwrt
