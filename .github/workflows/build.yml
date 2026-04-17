@@ -18,8 +18,13 @@ jobs:
             .feeds.conf
             feeds.conf.default
             configs
-            feeds
+            Makefile
             scripts
+            tools
+            target
+            include
+            package
+            feeds
           sparse-checkout-cone-mode: false
 
       - name: 安装依赖
