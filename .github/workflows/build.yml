@@ -28,6 +28,7 @@ jobs:
 
           # 克隆 istore 仓库并手动安装 luci-app-store
           git clone https://github.com/linkease/istore.git /tmp/istore
+          mkdir -p package/feeds/istore/
           cp -r /tmp/istore/luci/luci-app-store package/feeds/istore/
           cp -r /tmp/istore/luci/luci-lib-taskd package/feeds/istore/
           cp -r /tmp/istore/luci/luci-lib-xterm package/feeds/istore/
