@@ -13,7 +13,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout config repo
+        uses: actions/checkout@v4
+        with:
+          path: config
 
       - name: Install deps
         run: |
@@ -26,10 +29,10 @@ jobs:
           # 克隆源码
           git clone $REPO_URL -b $REPO_BRANCH openwrt
 
-          # 先复制 feeds 配置（cd openwrt 之前就要复制）
-          cp .feeds.conf.default openwrt/
+          # 复制 feeds 配置
+          cp config/feeds.conf.default openwrt/
 
-          # 克隆 istore 仓库并手动安装
+          # 克隆 istore 并手动安装
           git clone https://github.com/linkease/istore.git /tmp/istore
           mkdir -p openwrt/package/feeds/istore/
           cp -r /tmp/istore/luci/luci-app-store openwrt/package/feeds/istore/
@@ -45,8 +48,8 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-          # 复制配置文件并生成完整配置
-          cp ../configs/nsy_g68-plus.config .config
+          # 复制配置并生成完整配置
+          cp ../config/configs/nsy_g68-plus.config .config
           make defconfig
           make oldconfig MAKEFLAGS=-y
 
