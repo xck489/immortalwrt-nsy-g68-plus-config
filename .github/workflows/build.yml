@@ -29,8 +29,6 @@ jobs:
       - name: 准备编译
         run: |
           cd openwrt
-          cp ${{ github.workspace }}/.feeds.conf .feeds.conf 2>/dev/null || true
-          cp ${{ github.workspace }}/configs/g68_mtk_wifi.config .config
           TZ=Asia/Shanghai ./scripts/feeds update -a && ./scripts/feeds install -a
           make defconfig
 
