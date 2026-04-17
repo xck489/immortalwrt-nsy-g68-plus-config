@@ -26,30 +26,31 @@ jobs:
 
       - name: Build
         run: |
+          REPO_ROOT=$PWD
+          echo "Repo root: $REPO_ROOT"
+
           # 克隆源码
-          git clone $REPO_URL -b $REPO_BRANCH openwrt
+          git clone $REPO_URL -b $REPO_BRANCH $REPO_ROOT/openwrt
 
           # 复制 feeds 配置
-          cp config/feeds.conf.default openwrt/
+          cp $REPO_ROOT/config/feeds.conf.default $REPO_ROOT/openwrt/feeds.conf
 
           # 克隆 istore 并手动安装
           git clone https://github.com/linkease/istore.git /tmp/istore
-          mkdir -p openwrt/package/feeds/istore/
-          cp -r /tmp/istore/luci/luci-app-store openwrt/package/feeds/istore/
-          cp -r /tmp/istore/luci/luci-lib-taskd openwrt/package/feeds/istore/
-          cp -r /tmp/istore/luci/luci-lib-xterm openwrt/package/feeds/istore/
-          cp -r /tmp/istore/luci/taskd openwrt/package/feeds/istore/
-          ls -la openwrt/package/feeds/istore/
-
-          cd openwrt
+          mkdir -p $REPO_ROOT/openwrt/package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-app-store $REPO_ROOT/openwrt/package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-lib-taskd $REPO_ROOT/openwrt/package/feeds/istore/
+          cp -r /tmp/istore/luci/luci-lib-xterm $REPO_ROOT/openwrt/package/feeds/istore/
+          cp -r /tmp/istore/luci/taskd $REPO_ROOT/openwrt/package/feeds/istore/
+          ls -la $REPO_ROOT/openwrt/package/feeds/istore/
 
           # 更新 feeds
-          cp .feeds.conf.default feeds.conf 2>/dev/null || cp ../config/feeds.conf.default feeds.conf
+          cd $REPO_ROOT/openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
           # 复制配置并生成完整配置
-          cp ../config/configs/nsy_g68-plus.config .config
+          cp $REPO_ROOT/config/configs/nsy_g68-plus.config .config
           make defconfig
           make oldconfig MAKEFLAGS=-y
 
