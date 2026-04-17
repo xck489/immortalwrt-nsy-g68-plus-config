@@ -16,7 +16,6 @@ jobs:
         with:
           repository: linyueweia/immortalwrt-nsy-g68-plus
           path: openwrt
-          submodules: true
           fetch-depth: 1
 
       - name: Clone config repository
