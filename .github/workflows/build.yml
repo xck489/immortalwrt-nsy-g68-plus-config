@@ -28,27 +28,26 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libncurses-dev zlib1g-dev libssl-dev wget git curl unzip gettext pkg-config python3 python3-pip python3-pyelftools gawk diffutils xz-utils file bc bison flex automake cmake help2man ocaml sparse ccache rsync time device-tree-compiler clang
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libncurses-dev zlib1g-dev libssl-dev wget \
+            git curl unzip gettext pkg-config python3 python3-pip \
+            python3-pyelftools gawk diffutils xz-utils file bc bison \
+            flex automake cmake help2man ocaml sparse ccache rsync \
+            time device-tree-compiler clang
 
-      - name: Setup feeds.conf and update feeds
+      - name: Update and install feeds
         run: |
           cd openwrt
           cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
           TZ=Asia/Shanghai ./scripts/feeds update -a
-          ls -la feeds/ feeds/base/ 2>/dev/null | head -20
-
-      - name: Install feeds
-        run: |
-          cd openwrt
           ./scripts/feeds install -a
-          ls -la feeds/base/utils/busybox/ 2>/dev/null | head -10
 
-      - name: Copy .config and validate
+      - name: Create .config for NSY-G68-PLUS
         run: |
           cd openwrt
-          cp ../firmware-config/.config .config
+          cp target/linux/rockchip/armv8/config-6.6 .config
+          cat ../firmware-config/.config >> .config
           make defconfig
-          grep "CONFIG_TARGET.*DEVICE_nsy" .config
 
       - name: Build firmware
         run: |
