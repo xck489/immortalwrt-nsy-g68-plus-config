@@ -5,102 +5,34 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  REPO_URL: https://github.com/zhoufuli/immortalwrt-rk356x
+  REPO_BRANCH: main
+
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 600
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Clone source repository
-        uses: actions/checkout@v4
-        with:
-          repository: linyueweia/immortalwrt-nsy-g68-plus
-          path: openwrt
-          fetch-depth: 1
+      - uses: actions/checkout@v4
 
-      - name: Clone config repository
-        uses: actions/checkout@v4
-        with:
-          repository: linyueweia/immortalwrt-nsy-g68-plus-config
-          path: firmware-config
-          fetch-depth: 1
-
-      - name: Install build dependencies
+      - name: Install deps
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            build-essential libncurses-dev zlib1g-dev libssl-dev wget \
-            git curl unzip gettext pkg-config python3 python3-pip \
-            python3-pyelftools gawk diffutils xz-utils file bc bison \
-            flex automake cmake help2man ocaml sparse ccache rsync \
-            time device-tree-compiler clang
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4
 
-      - name: Update and install feeds
+      - name: Build
         run: |
+          git clone $REPO_URL -b $REPO_BRANCH openwrt
           cd openwrt
-          cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
-          TZ=Asia/Shanghai ./scripts/feeds update -a
+          cp ../configs/g68_mtk_wifi.config .config
+          ./scripts/feeds update -a
           ./scripts/feeds install -a
-          echo "=== Debug: check feeds/base ==="
-          ls -la package/feeds/base/utils/busybox/ 2>/dev/null | head -5 || echo "busybox dir missing"
-          find package/feeds/base -name "Config.in" 2>/dev/null | head -5
+          make defconfig
+          make download -j8
+          make -j$(nproc) world
 
-      - name: Patch missing Config.in files
-        run: |
-          cd openwrt
-          for dir in package/feeds/base/{utils,system,network}; do
-            if [ -d "$dir" ] && [ ! -f "$dir/Config.in" ]; then
-              touch "$dir/Config.in"
-              echo "# dummy" >> "$dir/Config.in"
-            fi
-          done
-
-      - name: Create .config for NSY-G68-PLUS
-        run: |
-          cd openwrt
-          cp target/linux/rockchip/armv8/config-6.6 .config
-          echo 'CONFIG_TARGET_rockchip=y' >> .config
-          echo 'CONFIG_TARGET_rockchip_armv8=y' >> .config
-          echo 'CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y' >> .config
-          echo 'CONFIG_TARGET_DEVICE_ROCKCHIP_ARMV8_DEVICE_nsy_g68-plus=y' >> .config
-          echo 'CONFIG_TARGET_PROFILE="DEVICE_nsy_g68-plus"' >> .config
-          echo 'CONFIG_TARGET_BOARD="rockchip"' >> .config
-          echo 'CONFIG_TARGET_SUBTARGET="armv8"' >> .config
-          echo 'CONFIG_TARGET_ARCH_PACKAGES="aarch64_generic"' >> .config
-          echo 'CONFIG_ARCH_64BIT=y' >> .config
-          echo 'CONFIG_ARCH="aarch64"' >> .config
-          echo 'CONFIG_LINUX_6_6=y' >> .config
-          echo 'CONFIG_KERNEL_PATCHVER="6.6"' >> .config
-          echo 'CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=generic"' >> .config
-          echo 'CONFIG_CPU_TYPE="generic"' >> .config
-          echo 'CONFIG_TARGET_ROOTFS_PARTSIZE=512' >> .config
-          echo 'CONFIG_TARGET_IMAGES_DTB=y' >> .config
-
-      - name: Build firmware
-        run: |
-          cd openwrt
-          make -j$(nproc) world V=s 2>&1 | tee build.log
-        id: build
-
-      - name: Upload firmware artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: |
-            openwrt/bin/targets/rockchip/armv8/**/*.img
-            openwrt/bin/targets/rockchip/armv8/**/*.img.gz
-            openwrt/bin/targets/rockchip/armv8/**/md5sums
-            openwrt/build.log
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Upload logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-failure-logs
-          path: |
-            openwrt/.config
-            openwrt/build.log
-          retention-days: 7
+          path: openwrt/bin/targets/rockchip/armv8/*.img.gz
