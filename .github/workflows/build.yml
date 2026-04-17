@@ -8,24 +8,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-hours: 6
     steps:
-      - name: 克隆源码
+      - name: 克隆源码仓库
         uses: actions/checkout@v4
         with:
           repository: linyueweia/immortalwrt-nsy-g68-plus
           path: openwrt
-          sparse-checkout: |
-            .feeds.conf
-            feeds.conf.default
-            configs
-            Makefile
-            scripts
-            tools
-            target
-            include
-            package
-            feeds
-          sparse-checkout-cone-mode: false
+          submodules: true
+          fetch-depth: 1
+
+      - name: 克隆配置仓库
+        uses: actions/checkout@v4
+        with:
+          repository: linyueweia/immortalwrt-nsy-g68-plus-config
+          path: firmware-config
+          fetch-depth: 1
 
       - name: 安装依赖
         run: |
@@ -33,11 +31,21 @@ jobs:
           sudo apt-get -y install build-essential clang flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4 python3-pip python3-pyelftools perl libperl-dev file rsync
           df -h
 
-      - name: 准备编译
+      - name: 准备配置文件
         run: |
           cd openwrt
-          cp .feeds.conf feeds.conf
-          TZ=Asia/Shanghai ./scripts/feeds update -a && ./scripts/feeds install -a
+          cp ../firmware-config/.config .
+          cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
+
+      - name: 更新并安装 feeds
+        run: |
+          cd openwrt
+          TZ=Asia/Shanghai ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: 生成配置
+        run: |
+          cd openwrt
           make defconfig
 
       - name: 下载依赖
@@ -53,6 +61,7 @@ jobs:
 
       - name: 上传固件
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: firmware
           path: openwrt/bin/targets/rockchip/armv8/*.img.gz
