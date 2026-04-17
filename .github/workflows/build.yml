@@ -41,13 +41,37 @@ jobs:
           cp .feeds.conf feeds.conf 2>/dev/null || cp feeds.conf.default feeds.conf
           TZ=Asia/Shanghai ./scripts/feeds update -a
           ./scripts/feeds install -a -f
-          ls -la package/feeds/base/ 2>/dev/null | head -10
 
       - name: Create .config for NSY-G68-PLUS
         run: |
           cd openwrt
           cp target/linux/rockchip/armv8/config-6.6 .config
-          cat ../firmware-config/.config >> .config
+          echo 'CONFIG_TARGET_rockchip=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y' >> .config
+          echo 'CONFIG_TARGET_DEVICE_ROCKCHIP_ARMV8_DEVICE_nsy_g68-plus=y' >> .config
+          echo 'CONFIG_TARGET_PROFILE="DEVICE_nsy_g68-plus"' >> .config
+          echo 'CONFIG_TARGET_BOARD="rockchip"' >> .config
+          echo 'CONFIG_TARGET_SUBTARGET="armv8"' >> .config
+          echo 'CONFIG_TARGET_ARCH_PACKAGES="aarch64_generic"' >> .config
+          echo 'CONFIG_ARCH_64BIT=y' >> .config
+          echo 'CONFIG_ARCH="aarch64"' >> .config
+          echo 'CONFIG_LINUX_6_6=y' >> .config
+          echo 'CONFIG_KERNEL_PATCHVER="6.6"' >> .config
+          echo 'CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=generic"' >> .config
+          echo 'CONFIG_CPU_TYPE="generic"' >> .config
+          echo 'CONFIG_TARGET_ROOTFS_PARTSIZE=512' >> .config
+          echo 'CONFIG_TARGET_IMAGES_DTB=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-firewall=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-opkg=y' >> .config
+          echo 'CONFIG_PACKAGE_wpad-openssl=y' >> .config
+          echo '=== .config created ===' 
+          grep "CONFIG_TARGET.*nsy" .config
+
+      - name: Validate configuration
+        run: |
+          cd openwrt
           make defconfig
 
       - name: Build firmware
