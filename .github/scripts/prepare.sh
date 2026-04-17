@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
-
 cd "$(dirname "$0")/.."
+
+# Initialize submodules (netwizard, istore)
+git submodule update --init --recursive
 
 # Prepare feeds and config from config-repo
 cp config-repo/.feeds.conf feeds.conf.default
