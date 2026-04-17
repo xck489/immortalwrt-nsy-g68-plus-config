@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 env:
+  TZ: Asia/Shanghai
   REPO_URL: https://github.com/zhoufuli/immortalwrt-rk356x
   REPO_BRANCH: main
 
@@ -28,6 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison gperf texinfo libncurses-dev python3 libncurses5-dev python3-dev python3-setuptools libssl-dev gettext zlib1g-dev file wget git curl unzip gettext pkg-config gawk diffutils xz-utils bc automake cmake device-tree-compiler ccache libtool autoconf autogen m4 python3-pip
+          df -h
 
       - name: Clone source code
         run: |
