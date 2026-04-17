@@ -62,10 +62,6 @@ jobs:
           echo 'CONFIG_CPU_TYPE="generic"' >> .config
           echo 'CONFIG_TARGET_ROOTFS_PARTSIZE=512' >> .config
           echo 'CONFIG_TARGET_IMAGES_DTB=y' >> .config
-          echo 'CONFIG_PACKAGE_luci=y' >> .config
-          echo 'CONFIG_PACKAGE_luci-app-firewall=y' >> .config
-          echo 'CONFIG_PACKAGE_luci-app-opkg=y' >> .config
-          echo 'CONFIG_PACKAGE_wpad-openssl=y' >> .config
           echo '=== .config created ===' 
           grep "CONFIG_TARGET.*nsy" .config
 
