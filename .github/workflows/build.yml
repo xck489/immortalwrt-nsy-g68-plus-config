@@ -21,6 +21,7 @@ jobs:
           ref: ${{ env.SOURCE_BRANCH }}
           path: immortalwrt
           fetch-depth: 1
+          submodules: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout config (this repo)
@@ -39,14 +40,26 @@ jobs:
       - name: Prepare config and feeds
         run: |
           cd immortalwrt
-          chmod +x config-repo/.github/scripts/*.sh
+          git submodule update --init --recursive
+          cp config-repo/.feeds.conf feeds.conf.default
+          cp config-repo/.config .config
           chmod +x scripts/*.sh
-          config-repo/.github/scripts/prepare.sh
+
+      - name: Update and install feeds
+        run: |
+          cd immortalwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Download
+        run: |
+          cd immortalwrt
+          make download -j8
 
       - name: Build
         run: |
           cd immortalwrt
-          ./scripts/build.sh
+          make -j$(nproc) world
 
       - uses: actions/upload-artifact@v4
         if: success()
